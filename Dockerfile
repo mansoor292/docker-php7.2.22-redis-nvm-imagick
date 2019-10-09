@@ -69,6 +69,21 @@ RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}\
 
 RUN npm i pm2 -g
 
+#install legacy php libraries
+#Get Slim from the URL unzip and move it to the library
+COPY src/Slim.zip /tmp
+RUN unzip /tmp/Slim.zip -d /usr/local/lib/php
+	
+#Get Smarty from the URL unzip and move it to the library
+COPY src/Smarty.zip /tmp
+RUN unzip /tmp/Smarty.zip -d /usr/local/lib/php
+
+#Get lessphp from the src unzip and move it to the library
+COPY src/lessphp.zip /tmp
+RUN unzip /tmp/lessphp.zip -d /usr/local/lib/php
+
+
+
 EXPOSE 80
 
     
