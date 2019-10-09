@@ -28,15 +28,10 @@ RUN apt-get install -y \
     libfreetype6-dev
 
 RUN docker-php-ext-configure gd \
-    --with-gd \
-    --with-webp-dir \
-    --with-jpeg-dir \
-    --with-png-dir \
-    --with-zlib-dir \
-    --with-xpm-dir \
-    --with-freetype-dir 
-    
-RUN docker-php-ext-install gd
+    --with-jpeg-dir=/usr/include/\
+    --with-png-dir=/usr/include/\
+    --with-freetype-dir=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd
 
 RUN cd ~
 #install imagick
@@ -66,17 +61,13 @@ WORKDIR /var/www/html
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
 ENV NVM_DIR=/root/.nvm
 ENV NODE_VERSION=7.10.1
-RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
-RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
-RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
 ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
-RUN node --version
-RUN npm --version
+RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}\
+ && . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}\
+ && . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}\
+ && node --version && npm --version
 
 RUN npm i pm2 -g
-RUN npm i grunt grunt-cli -g
-
-
 
 EXPOSE 80
 
