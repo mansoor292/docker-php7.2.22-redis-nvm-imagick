@@ -2,27 +2,10 @@ FROM php:7.2.22-apache
 
 #Install Git
 RUN apt-get update \
-    && apt-get install -y git
+    && apt-get install -y git \
+    && apt-get install -y nano \ 
+    && apt-get install -y unzip
 
-#Install nano
-RUN apt-get install -y nano
-
-#Install unzip
-RUN apt-get install -y unzip
-
-#Get Slim from the URL unzip and move it to the library
-COPY src/Slim.zip /tmp
-RUN unzip /tmp/Slim.zip -d /usr/local/lib/php
-	
-#Get Smarty from the URL unzip and move it to the library
-COPY src/Smarty.zip /tmp
-RUN unzip /tmp/Smarty.zip -d /usr/local/lib/php
-
-#Get lessphp from the src unzip and move it to the library
-COPY src/lessphp.zip /tmp
-RUN unzip /tmp/lessphp.zip -d /usr/local/lib/php
-
-#add git keys
 # Make ssh dir
 RUN mkdir /root/.ssh/
 # Create id_rsa from string arg, and set permissions
@@ -33,12 +16,27 @@ RUN chmod 600 /root/.ssh/id_rsa \
 # Add git providers to known_hosts
 && ssh-keyscan bitbucket.org >> /root/.ssh/known_hosts 
 
-RUN apt-get update
 RUN apt-get install -y libpq-dev
-
 RUN docker-php-ext-install pdo pdo_pgsql pgsql
-
 RUN a2enmod rewrite && a2enmod proxy && a2enmod proxy_http && a2enmod proxy_balancer && a2enmod lbmethod_byrequests 
+
+#add image libraries
+RUN apt-get install -y \
+    libwebp-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev libxpm-dev \
+    libfreetype6-dev
+
+RUN docker-php-ext-configure gd \
+    --with-gd \
+    --with-webp-dir \
+    --with-jpeg-dir \
+    --with-png-dir \
+    --with-zlib-dir \
+    --with-xpm-dir \
+    --with-freetype-dir 
+    
+RUN docker-php-ext-install gd
 
 RUN cd ~
 #install imagick
@@ -48,8 +46,11 @@ RUN apt-get update && apt-get install -y \
 	&& docker-php-ext-enable imagick
 
 
-#install REDIS
-RUN apt-get update && apt-get install -y wget automake autotools-dev g++ git libcurl4-gnutls-dev libfuse-dev libssl-dev libxml2-dev make pkg-config && git clone https://github.com/s3fs-fuse/s3fs-fuse && wget https://github.com/Yelp/dumb-init/releases/download/v1.0.1/dumb-init_1.0.1_amd64.deb && dpkg -i dumb-init_*.deb && rm dumb-init_*.deb
+#install s3fs
+RUN apt-get update && apt-get install -y wget automake autotools-dev g++ git libcurl4-gnutls-dev libfuse-dev libssl-dev libxml2-dev make pkg-config \
+    && git clone https://github.com/s3fs-fuse/s3fs-fuse &&\
+    wget https://github.com/Yelp/dumb-init/releases/download/v1.0.1/dumb-init_1.0.1_amd64.deb && dpkg -i dumb-init_*.deb && rm dumb-init_*.deb
+
 WORKDIR s3fs-fuse
 RUN ./autogen.sh && ./configure --prefix=/usr --with-openssl && make && make install
 
@@ -62,24 +63,21 @@ RUN yes | pecl install xdebug \
 
 WORKDIR /var/www/html
 #Install Node-6
-    RUN apt install -y curl
-    RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
-    ENV NVM_DIR=/root/.nvm
-    ENV NODE_VERSION=7.10.1
-    RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
-    RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
-    RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
-    ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
-    RUN node --version
-    RUN npm --version
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+ENV NVM_DIR=/root/.nvm
+ENV NODE_VERSION=7.10.1
+RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+RUN node --version
+RUN npm --version
 
-RUN node -v
 RUN npm i pm2 -g
 RUN npm i grunt grunt-cli -g
 
+
+
 EXPOSE 80
-EXPOSE 3000
-EXPOSE 3010
-EXPOSE 3020
 
     
